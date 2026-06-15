@@ -26,21 +26,20 @@ local function getHumanoidRootPart()
 	return character:FindFirstChild("HumanoidRootPart")
 end
 
--- Fires the prompt directly on the target object found
+-- Fires the prompt directly with a robust hold action
 local function claimTargetReward(prompt)
 	if prompt then
 		prompt:InputHoldBegin()
-		task.wait(prompt.HoldDuration + 0.05)
+		task.wait(prompt.HoldDuration + 0.1) -- Added a tiny buffer to the hold duration
 		prompt:InputHoldEnd()
 	end
 end
 
--- NEW: Scans the entire workspace instantly for anything representing the Crow
+-- Scans the entire workspace instantly for anything representing the Crow
 local function findActiveCrowPrompts()
 	local activePrompts = {}
 	
 	for _, object in ipairs(workspace:GetDescendants()) do
-		-- Look for a ProximityPrompt whose object or parent is named "Crow"
 		if object:IsA("ProximityPrompt") then
 			local parent = object.Parent
 			if object.ObjectText == "Crow" or (parent and (parent.Name == "Crow" or parent:FindFirstChild("Crow"))) then
@@ -248,7 +247,6 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	-- Android stream-in delay buffer
 	if isRunning then task.wait(5) end
 	
 	while true do
@@ -259,7 +257,6 @@ task.spawn(function()
 				targetPrompts = findActiveCrowPrompts()
 			end)
 			
-			-- IF CROWS EXIST: Blast through and pick them up instantly
 			if #targetPrompts > 0 then
 				for _, prompt in ipairs(targetPrompts) do
 					if not isRunning then return end
@@ -268,16 +265,23 @@ task.spawn(function()
 					if parentPart and parentPart:IsA("BasePart") then
 						local hrp = getHumanoidRootPart()
 						if hrp then
-							hrp.CFrame = parentPart.CFrame + Vector3.new(0, 3, 0)
-							task.wait(0.15)
-							claimTargetReward(prompt)
+							-- Teleport right on top of it
+							hrp.CFrame = parentPart.CFrame + Vector3.new(0, 2, 0)
+							task.wait(0.3) -- NEW: Increased wait to let character stabilize on Android
+							
+							-- NEW: Attempts to claim it up to 3 times to guarantee it registers
+							local attempts = 0
+							while prompt and prompt.Parent and attempts < 3 do
+								claimTargetReward(prompt)
+								task.wait(0.15)
+								attempts = attempts + 1
+							end
 						end
 					end
-					task.wait(0.2)
+					task.wait(0.3)
 				end
 			end
 			
-			-- IF AUTO-HOP IS ACTIVE: Hop immediately after clearing or if server was dry
 			if autoHopEnabled and isRunning then
 				serverHop()
 				task.wait(10)
