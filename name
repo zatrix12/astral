@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+local GuiService = game:GetService("GuiService") -- Added for error tracking
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -26,7 +27,6 @@ local function getHumanoidRootPart()
 	return character:FindFirstChild("HumanoidRootPart")
 end
 
--- Fires the prompt directly with a robust hold action
 local function claimTargetReward(prompt)
 	if prompt then
 		prompt:InputHoldBegin()
@@ -35,10 +35,8 @@ local function claimTargetReward(prompt)
 	end
 end
 
--- Scans the entire workspace instantly for anything representing the Crow
 local function findActiveCrowPrompts()
 	local activePrompts = {}
-	
 	for _, object in ipairs(workspace:GetDescendants()) do
 		if object:IsA("ProximityPrompt") then
 			local parent = object.Parent
@@ -47,7 +45,6 @@ local function findActiveCrowPrompts()
 			end
 		end
 	end
-	
 	return activePrompts
 end
 
@@ -67,23 +64,18 @@ local function serverHop()
 	end
 
 	local success, err = pcall(function()
-		-- Pull a large list of public servers
 		local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
 		local req = game:HttpGet(url)
 		local body = HttpService:JSONDecode(req)
 		
 		if body and body.data then
 			local validServers = {}
-			
 			for _, server in ipairs(body.data) do
-				-- Filters for servers that aren't full, aren't empty, aren't your current server,
-				-- and ideally have lower player counts where farmers aren't lurking
 				if server.playing < server.maxPlayers and server.playing > 1 and server.id ~= game.JobId then
 					table.insert(validServers, server.id)
 				end
 			end
 			
-			-- NEW: Pick a completely random server from the valid pool to avoid other exploiters
 			if #validServers > 0 then
 				math.randomseed(os.time())
 				local randomServerId = validServers[math.random(1, #validServers)]
@@ -209,26 +201,15 @@ local function createMenuUI()
 	
 	actionBtn.MouseButton1Click:Connect(function()
 		isRunning = not isRunning
-		if isRunning then
-			actionBtn.Text = "STOP CYCLE"
-			actionBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-		else
-			actionBtn.Text = "START CYCLE"
-			actionBtn.BackgroundColor3 = Color3.fromRGB(45, 40, 75)
-		end
+		actionBtn.Text = isRunning and "STOP CYCLE" or "START CYCLE"
+		actionBtn.BackgroundColor3 = isRunning and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(45, 40, 75)
 	end)
 	
 	hopBtn.MouseButton1Click:Connect(function()
 		autoHopEnabled = not autoHopEnabled
-		if autoHopEnabled then
-			hopBtn.Text = "AUTO-HOP: ON"
-			hopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			hopBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 60)
-		else
-			hopBtn.Text = "AUTO-HOP: OFF"
-			hopBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-			hopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-		end
+		hopBtn.Text = autoHopEnabled and "AUTO-HOP: ON" or "AUTO-HOP: OFF"
+		hopBtn.TextColor3 = autoHopEnabled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
+		hopBtn.BackgroundColor3 = autoHopEnabled and Color3.fromRGB(40, 100, 60) or Color3.fromRGB(35, 35, 45)
 	end)
 	
 	minimizeBtn.MouseButton1Click:Connect(function()
@@ -259,21 +240,16 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	-- Keeping your double loading buffer for Android safety
 	if isRunning then task.wait(10) end
 	
 	while true do
 		if isRunning then
 			local targetPrompts = {}
-			
-			pcall(function()
-				targetPrompts = findActiveCrowPrompts()
-			end)
+			pcall(function() targetPrompts = findActiveCrowPrompts() end)
 			
 			if #targetPrompts > 0 then
 				for _, prompt in ipairs(targetPrompts) do
 					if not isRunning then return end
-					
 					local parentPart = prompt.Parent
 					if parentPart and parentPart:IsA("BasePart") then
 						local hrp = getHumanoidRootPart()
@@ -300,4 +276,13 @@ task.spawn(function()
 		end
 		task.wait(0.5)
 	end
+end)
+
+-- =============================================================================
+-- NEW: AUTOMATIC ERROR & DISCONNECT SAFEGUARD
+-- =============================================================================
+GuiService.ErrorMessageChanged:Connect(function(errorMessage, errorCode)
+	-- Fires instantly if Roblox shows a connection or teleport failure overlay
+	task.wait(2) 
+	serverHop()
 end)
