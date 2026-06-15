@@ -256,7 +256,7 @@ end)
 
 task.spawn(function()
 	-- Gives workspace folders exactly 2.5 seconds to fully stream instances upon landing
-	if isRunning then task.wait(2.5) end
+	if isRunning then task.wait(5) end
 	
 	while true do
 		if isRunning then
