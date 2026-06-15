@@ -8,13 +8,11 @@ local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Check if we were passed startup arguments from a previous server hop
 local isRunning = shared.CorvoAutoStart or false
 local autoHopEnabled = shared.CorvoHopStart or false
 local isMenuOpen = true
 local corvoGui = nil
 
--- Clean up shared variables so they don't mess up manual executions later
 shared.CorvoAutoStart = nil
 shared.CorvoHopStart = nil
 
@@ -51,6 +49,11 @@ local function fetchSpawns()
 	
 	if not spawnFolder then return {} end
 	
+	-- NEW: If the folder exists but it's empty or barely loaded, give it a moment to stream in the parts
+	if #spawnFolder:GetChildren() < 10 then
+		task.wait(3.5) -- Safe workspace stream-in buffer
+	end
+	
 	local spawnsList = {}
 	for _, child in ipairs(spawnFolder:GetChildren()) do
 		table.insert(spawnsList, child)
@@ -59,17 +62,15 @@ local function fetchSpawns()
 end
 
 -- =============================================================================
--- SMART SERVER HOPPING LOGIC (WITH RE-EXECUTION QUEUE)
+-- SMART SERVER HOPPING LOGIC
 -- =============================================================================
 local function serverHop()
-	-- Prepare the startup string that forces the toggles to stay active upon joining
 	local carryOverScript = [[
 		shared.CorvoAutoStart = true
 		shared.CorvoHopStart = true
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/zatrix12/astral/refs/heads/main/name"))()
 	]]
 	
-	-- Inject the persistence script into the teleport pipeline
 	local queue = queue_on_teleport or (syn and syn.queue_on_teleport)
 	if queue then
 		queue(carryOverScript)
@@ -185,7 +186,6 @@ local function createMenuUI()
 	actionBtn.Font = Enum.Font.GothamBold
 	actionBtn.TextSize = 13
 	
-	-- Dynamically style button color based on startup logic
 	actionBtn.Text = isRunning and "STOP CYCLE" or "START CYCLE"
 	actionBtn.BackgroundColor3 = isRunning and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(45, 40, 75)
 	
@@ -198,7 +198,6 @@ local function createMenuUI()
 	hopBtn.Font = Enum.Font.GothamBold
 	hopBtn.TextSize = 13
 	
-	-- Dynamically style hop button color based on startup logic
 	hopBtn.Text = autoHopEnabled and "AUTO-HOP: ON" or "AUTO-HOP: OFF"
 	hopBtn.TextColor3 = autoHopEnabled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
 	hopBtn.BackgroundColor3 = autoHopEnabled and Color3.fromRGB(40, 100, 60) or Color3.fromRGB(35, 35, 45)
@@ -258,6 +257,9 @@ task.spawn(function()
 end)
 
 task.spawn(function()
+	-- Initial buffer delay upon fresh server loading to let workspace stabilize
+	if isRunning then task.wait(4) end
+	
 	while true do
 		if isRunning then
 			pcall(function()
