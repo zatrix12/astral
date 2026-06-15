@@ -247,7 +247,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	if isRunning then task.wait(5) end
+	if isRunning then task.wait(10) end
 	
 	while true do
 		if isRunning then
