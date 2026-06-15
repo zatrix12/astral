@@ -1,0 +1,226 @@
+-- =============================================================================
+-- SERVICES & GLOBAL VARIABLES
+-- =============================================================================
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local isRunning = false
+local isMenuOpen = true
+local corvoGui = nil
+
+-- =============================================================================
+-- UTILITY FUNCTIONS
+-- =============================================================================
+
+-- Safely fetches the character's HumanoidRootPart without yielding indefinitely
+local function getHumanoidRootPart()
+	local character = LocalPlayer.Character
+	if not character then return nil end
+	return character:FindFirstChild("HumanoidRootPart")
+end
+
+-- Scans the immediate area around the player for any Claim ProximityPrompts
+local function claimNearbyRewards()
+	local hrp = getHumanoidRootPart()
+	if not hrp then return end
+	
+	-- Look through workspace near the player for a ProximityPrompt
+	for _, object in ipairs(workspace:GetDescendants()) do
+		if object:IsA("ProximityPrompt") and object.Parent then
+			-- Calculate target location whether it's a part or a model
+			local targetPos = object.Parent:IsA("BasePart") and object.Parent.Position or object.Parent:GetPivot().Position
+			
+			-- Check if the reward is close enough to claim
+			if (hrp.Position - targetPos).Magnitude < 15 then
+				object:InputHoldBegin()
+				task.wait(object.HoldDuration + 0.05) -- Dynamically handles hold times safely
+				object:InputHoldEnd()
+			end
+		end
+	end
+end
+
+-- Gathers all current spawn locations from the game world
+local function fetchSpawns()
+	local worlds = workspace:FindFirstChild("Worlds")
+	local world6 = worlds and worlds:FindFirstChild("6")
+	local spawnFolder = world6 and world6:FindFirstChild("CorvoSpawns")
+	
+	if not spawnFolder then return {} end
+	
+	local spawnsList = {}
+	for _, child in ipairs(spawnFolder:GetChildren()) do
+		table.insert(spawnsList, child)
+	end
+	return spawnsList
+end
+
+-- Adds smooth dragging physics to the custom GUI Frame
+local function enableGuiDragging(frame)
+	local dragging = false
+	local dragInput, dragStart, startPos
+
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	frame.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(
+				startPos.X.Scale, 
+				startPos.X.Offset + delta.X, 
+				startPos.Y.Scale, 
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+-- =============================================================================
+-- USER INTERFACE SETUP (V2 MODERN THEME)
+-- =============================================================================
+local function createMenuUI()
+	local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+	if not playerGui or playerGui:FindFirstChild("CorvMenu") then return end
+	
+	-- Root ScreenGui
+	corvoGui = Instance.new("ScreenGui", playerGui)
+	corvoGui.Name = "CorvMenu"
+	corvoGui.ResetOnSpawn = false
+	
+	-- Main Dark Glass Panel Frame
+	local mainFrame = Instance.new("Frame", corvoGui)
+	mainFrame.Size = UDim2.new(0, 220, 0, 95)
+	mainFrame.Position = UDim2.new(0, 30, 0, 100)
+	mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	mainFrame.BorderSizePixel = 0
+	enableGuiDragging(mainFrame)
+	
+	local mainCorner = Instance.new("UICorner", mainFrame)
+	mainCorner.CornerRadius = UDim.new(0, 8)
+	
+	-- Header Text Label
+	local titleLabel = Instance.new("TextLabel", mainFrame)
+	titleLabel.Size = UDim2.new(1, -40, 0, 30)
+	titleLabel.Position = UDim2.new(0, 10, 0, 0)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = "Corvo Tool v2"
+	titleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextSize = 14
+	
+	-- Minimize Button (-)
+	local minimizeBtn = Instance.new("TextButton", mainFrame)
+	minimizeBtn.Size = UDim2.new(0, 25, 0, 25)
+	minimizeBtn.Position = UDim2.new(1, -30, 0, 4)
+	minimizeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+	minimizeBtn.Text = "-"
+	minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	minimizeBtn.Font = Enum.Font.GothamBold
+	minimizeBtn.TextSize = 14
+	
+	local minimizeCorner = Instance.new("UICorner", minimizeBtn)
+	minimizeCorner.CornerRadius = UDim.new(0, 6)
+	
+	-- Main Cycle Action Button
+	local actionBtn = Instance.new("TextButton", mainFrame)
+	actionBtn.Size = UDim2.new(1, -20, 0, 45)
+	actionBtn.Position = UDim2.new(0, 10, 0, 38)
+	actionBtn.BackgroundColor3 = Color3.fromRGB(45, 40, 75)
+	actionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	actionBtn.Font = Enum.Font.GothamBold
+	actionBtn.TextSize = 14
+	actionBtn.Text = isRunning and "STOP CYCLE" or "START CYCLE"
+	
+	local actionCorner = Instance.new("UICorner", actionBtn)
+	actionCorner.CornerRadius = UDim.new(0, 6)
+	
+	-- Interaction Events
+	actionBtn.MouseButton1Click:Connect(function()
+		isRunning = not isRunning
+		if isRunning then
+			actionBtn.Text = "STOP CYCLE"
+			actionBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40) -- Crimson active accent
+		else
+			actionBtn.Text = "START CYCLE"
+			actionBtn.BackgroundColor3 = Color3.fromRGB(45, 40, 75)  -- Deep purple idle accent
+		end
+	end)
+	
+	minimizeBtn.MouseButton1Click:Connect(function()
+		isMenuOpen = not isMenuOpen
+		if isMenuOpen then
+			mainFrame.Size = UDim2.new(0, 220, 0, 95)
+			actionBtn.Visible = true
+			minimizeBtn.Text = "-"
+		else
+			mainFrame.Size = UDim2.new(0, 220, 0, 32)
+			actionBtn.Visible = false
+			minimizeBtn.Text = "+"
+		end
+	end)
+end
+
+-- =============================================================================
+-- ASYNC BACKGROUND CORES
+-- =============================================================================
+
+-- Thread 1: Keeps the interface alive persistently
+task.spawn(function()
+	while true do
+		createMenuUI()
+		task.wait(1)
+	end
+end)
+
+-- Thread 2: Handles the core teleportation and farming framework
+task.spawn(function()
+	while true do
+		if isRunning then
+			pcall(function()
+				local spawns = fetchSpawns()
+				
+				for _, currentSpawn in ipairs(spawns) do
+					if not isRunning then return end
+					
+					-- Get target position structure
+					local targetCFrame = currentSpawn:IsA("BasePart") and currentSpawn.CFrame or currentSpawn:IsA("Model") and currentSpawn:GetPivot()
+					
+					if targetCFrame then
+						local startTime = os.clock()
+						-- Hold loop on position for exactly 1.2 seconds
+						while isRunning and (os.clock() - startTime) < 1.2 do
+							local hrp = getHumanoidRootPart()
+							if hrp then 
+								hrp.CFrame = targetCFrame + Vector3.new(0, 3.5, 0) 
+								claimNearbyRewards() -- Run auto-claimer actively while hovering
+							end
+							task.wait(0.1)
+						end
+					end
+					task.wait(0.3) -- Brief path delay between nodes
+				end
+			end)
+		end
+		task.wait(0.1)
+	end
+end)
