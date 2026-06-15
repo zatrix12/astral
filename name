@@ -26,39 +26,37 @@ local function getHumanoidRootPart()
 	return character:FindFirstChild("HumanoidRootPart")
 end
 
-local function claimNearbyRewards()
+-- Claims only the prompt specifically attached to the crow we teleported to
+local function claimTargetReward(targetObject)
 	local hrp = getHumanoidRootPart()
 	if not hrp then return end
 	
-	for _, object in ipairs(workspace:GetDescendants()) do
-		if object:IsA("ProximityPrompt") and object.Parent then
-			local targetPos = object.Parent:IsA("BasePart") and object.Parent.Position or object.Parent:GetPivot().Position
-			if (hrp.Position - targetPos).Magnitude < 15 then
-				object:InputHoldBegin()
-				task.wait(object.HoldDuration + 0.05)
-				object:InputHoldEnd()
-			end
-		end
+	-- Look for a ProximityPrompt inside or near the specific spawn object
+	local prompt = targetObject:FindFirstChildWhichIsA("ProximityPrompt", true)
+	
+	if prompt then
+		prompt:InputHoldBegin()
+		task.wait(prompt.HoldDuration + 0.05)
+		prompt:InputHoldEnd()
 	end
 end
 
-local function fetchSpawns()
+-- Scans the folder to see if any actual Crows/Prompts exist right now
+local function getActiveCrows()
 	local worlds = workspace:FindFirstChild("Worlds")
 	local world6 = worlds and worlds:FindFirstChild("6")
 	local spawnFolder = world6 and world6:FindFirstChild("CorvoSpawns")
 	
 	if not spawnFolder then return {} end
 	
-	-- NEW: If the folder exists but it's empty or barely loaded, give it a moment to stream in the parts
-	if #spawnFolder:GetChildren() < 10 then
-		task.wait(3.5) -- Safe workspace stream-in buffer
-	end
-	
-	local spawnsList = {}
+	local activeList = {}
 	for _, child in ipairs(spawnFolder:GetChildren()) do
-		table.insert(spawnsList, child)
+		-- Checks if the spawn location actually contains a ProximityPrompt (meaning a crow is there)
+		if child:FindFirstChildWhichIsA("ProximityPrompt", true) then
+			table.insert(activeList, child)
+		end
 	end
-	return spawnsList
+	return activeList
 end
 
 -- =============================================================================
@@ -257,39 +255,43 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	-- Initial buffer delay upon fresh server loading to let workspace stabilize
-	if isRunning then task.wait(4) end
+	-- Gives workspace folders exactly 2.5 seconds to fully stream instances upon landing
+	if isRunning then task.wait(2.5) end
 	
 	while true do
 		if isRunning then
+			local activeCrows = {}
+			
 			pcall(function()
-				local spawns = fetchSpawns()
-				
-				for _, currentSpawn in ipairs(spawns) do
-					if not isRunning then return end
-					
-					local targetCFrame = currentSpawn:IsA("BasePart") and currentSpawn.CFrame or currentSpawn:IsA("Model") and currentSpawn:GetPivot()
-					
-					if targetCFrame then
-						local startTime = os.clock()
-						while isRunning and (os.clock() - startTime) < 1.2 do
-							local hrp = getHumanoidRootPart()
-							if hrp then 
-								hrp.CFrame = targetCFrame + Vector3.new(0, 3.5, 0) 
-								claimNearbyRewards()
-							end
-							task.wait(0.1)
-						end
-					end
-					task.wait(0.3)
-				end
+				activeCrows = getActiveCrows()
 			end)
 			
+			-- IF CROWS ARE FOUND: Target and clear them instantly
+			if #activeCrows > 0 then
+				for _, crowSpawn in ipairs(activeCrows) do
+					if not isRunning then return end
+					
+					local targetCFrame = crowSpawn:IsA("BasePart") and crowSpawn.CFrame or crowSpawn:IsA("Model") and crowSpawn:GetPivot()
+					
+					if targetCFrame then
+						local hrp = getHumanoidRootPart()
+						if hrp then
+							-- Teleport directly onto the active crow
+							hrp.CFrame = targetCFrame + Vector3.new(0, 3.5, 0)
+							task.wait(0.1)
+							claimTargetReward(crowSpawn)
+						end
+					end
+					task.wait(0.2)
+				end
+			end
+			
+			-- IF AUTO-HOP IS ON: Leave immediately after clearing or if it was empty
 			if autoHopEnabled and isRunning then
 				serverHop()
 				task.wait(10)
 			end
 		end
-		task.wait(0.5)
+		task.wait(0.3)
 	end
 end)
