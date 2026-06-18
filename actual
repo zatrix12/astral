@@ -10,13 +10,6 @@ ScreenGui.Name = "ZatrixPremiumHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
--- ==========================================
--- NEW: UI SCALE OBJECT (Handles the sizing)
--- ==========================================
-local PanelScale = Instance.new("UIScale")
-PanelScale.Scale = 1.0 -- Default scale
-PanelScale.Parent = nil -- Will be parented to MainFrame once created
-
 -- 2. Sleek Modern Frame Geometry
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainWindow"
@@ -28,7 +21,11 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
-PanelScale.Parent = MainFrame -- Hook up scale to the window
+-- FIXED: UIScale must be parented directly to the MainFrame to affect it
+local PanelScale = Instance.new("UIScale")
+PanelScale.Name = "PanelScale"
+PanelScale.Scale = 1.0 
+PanelScale.Parent = MainFrame
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
@@ -181,20 +178,18 @@ local function addTestButton(parentPage, sectionName)
     stroke.Thickness = 1
     stroke.Color = Color3.fromRGB(48, 48, 48)
     stroke.Parent = testBtn
-    
-    testBtn.MouseButton1Click:Connect(function()
-        print("Fired generic test execution wrapper on page: " .. sectionName)
-    end)
 end
 
--- Farm Page Elements
+-- ==========================================
+-- REDESIGNED CLEAN AUTO RAID TOGGLE BUTTON
+-- ==========================================
 local TimelessRaidButton = Instance.new("TextButton")
 TimelessRaidButton.Name = "TimelessRaidToggle"
 TimelessRaidButton.Size = UDim2.new(0, 330, 0, 42)
-TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(42, 24, 24)
+TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28) -- Clean subtle dark grey default
 TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
-TimelessRaidButton.TextColor3 = Color3.fromRGB(240, 100, 100)
-TimelessRaidButton.Font = Enum.Font.GothamBold
+TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+TimelessRaidButton.Font = Enum.Font.GothamMedium
 TimelessRaidButton.TextSize = 13
 TimelessRaidButton.LayoutOrder = 1
 TimelessRaidButton.Parent = farmPage
@@ -205,7 +200,7 @@ RaidCorner.Parent = TimelessRaidButton
 
 local RaidStroke = Instance.new("UIStroke")
 RaidStroke.Thickness = 1
-RaidStroke.Color = Color3.fromRGB(80, 35, 35)
+RaidStroke.Color = Color3.fromRGB(45, 45, 45) -- Matching border theme
 RaidStroke.Parent = TimelessRaidButton
 
 addTestButton(farmPage, "Farm")
@@ -213,9 +208,8 @@ addTestButton(gamblePage, "Gamble")
 addTestButton(priorityPage, "Priority")
 
 --- ==========================================
---- NEW: MISC SECTION SLIDER LOGIC (0.6 - 1.3)
+--- MISC SECTION SLIDER LOGIC (0.6 - 1.3)
 --- ==========================================
-
 local SliderContainer = Instance.new("Frame")
 SliderContainer.Name = "SliderContainer"
 SliderContainer.Size = UDim2.new(0, 330, 0, 55)
@@ -248,8 +242,8 @@ TrackCorner.Parent = SliderTrack
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Name = "SliderFill"
-SliderFill.Size = UDim2.new(0.571, 0, 1, 0) -- Corresponds to 1.0 initial scale setup
-SliderFill.BackgroundColor3 = Color3.fromRGB(100, 100, 240)
+SliderFill.Size = UDim2.new(0.571, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 230) -- Clean slider blue
 SliderFill.BorderSizePixel = 0
 SliderFill.Parent = SliderTrack
 
@@ -269,23 +263,23 @@ local KnobCorner = Instance.new("UICorner")
 KnobCorner.CornerRadius = UDim.new(1, 0)
 KnobCorner.Parent = SliderButton
 
--- Math parameters for slider constraints
 local minScale = 0.6
 local maxScale = 1.3
 local isDragging = false
 
 local function updateSlider(inputObject)
     local trackWidth = SliderTrack.AbsoluteSize.X
+    if trackWidth == 0 then return end
+    
     local mouseX = inputObject.Position.X - SliderTrack.AbsolutePosition.X
     local percentage = math.clamp(mouseX / trackWidth, 0, 1)
-    
-    -- Calculate scaled number value smoothly across linear floor gaps
     local calculatedScale = minScale + (percentage * (maxScale - minScale))
     
-    -- Apply changes
     SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
     SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
     SliderTitle.Text = string.format("GUI Scale: %.2fx", calculatedScale)
+    
+    -- Update the core layout scale frame value directly
     PanelScale.Scale = calculatedScale
 end
 
@@ -310,9 +304,6 @@ end)
 --- ==========================================
 --- HUB NAVIGATION & UI MANAGEMENT CORE
 --- ==========================================
-
-local currentActiveTab = nil
-
 local function switchTab(tabName)
     for name, button in pairs(tabButtons) do
         button.BackgroundTransparency = 1
@@ -326,7 +317,6 @@ local function switchTab(tabName)
         targetBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
         targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         pages[tabName].Visible = true
-        currentActiveTab = tabName
     end
 end
 
@@ -338,18 +328,19 @@ end
 
 switchTab("Farm")
 
+-- Modern Blue Accent Toggle Logic
 local isTimelessActive = false
 TimelessRaidButton.MouseButton1Click:Connect(function()
     isTimelessActive = not isTimelessActive
     if isTimelessActive then
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(24, 42, 24)
-        TimelessRaidButton.TextColor3 = Color3.fromRGB(100, 240, 100)
-        RaidStroke.Color = Color3.fromRGB(35, 80, 35)
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(24, 32, 45) -- Dark Blue theme
+        TimelessRaidButton.TextColor3 = Color3.fromRGB(100, 180, 255)  -- Neon cyan text
+        RaidStroke.Color = Color3.fromRGB(50, 90, 160)
         TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
     else
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(42, 24, 24)
-        TimelessRaidButton.TextColor3 = Color3.fromRGB(240, 100, 100)
-        RaidStroke.Color = Color3.fromRGB(80, 35, 35)
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+        TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+        RaidStroke.Color = Color3.fromRGB(45, 45, 45)
         TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
     end
 end)
