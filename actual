@@ -1,1 +1,99 @@
+-- LocalScript - Place in StarterPlayerScripts or StarterGui
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
 
+-- 1. Create the Main ScreenGui Container
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ModularityTestingGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = playerGui
+
+-- 2. Main Window Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainWindow"
+MainFrame.Size = UDim2.new(0, 250, 0, 300)
+MainFrame.Position = UDim2.new(0, 50, 0, 50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- Convenient for baseplate testing
+MainFrame.Parent = ScreenGui
+
+-- Corner styling for the main window
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Title Banner
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "DEVELOPER TESTING PANEL"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.Parent = MainFrame
+
+-- UI List Layout to keep sections clean
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = MainFrame
+
+-- Offset the list below the title banner
+Title.LayoutOrder = 0
+local Spacer = Instance.new("Frame")
+Spacer.Size = UDim2.new(1, 0, 0, 30)
+Spacer.BackgroundTransparency = 1
+Spacer.LayoutOrder = 1
+Spacer.Parent = MainFrame
+
+--- ==========================================
+--- SECTION: AUTO FARM & AUTO RAID WINDOWS
+--- ==========================================
+
+-- 3. "Timeless" Raid Activation Toggle Button
+local TimelessRaidButton = Instance.new("TextButton")
+TimelessRaidButton.Name = "TimelessRaidToggle"
+TimelessRaidButton.Size = UDim2.new(0, 200, 0, 45)
+TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Default Red (Off)
+TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
+TimelessRaidButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TimelessRaidButton.Font = Enum.Font.SourceSansBold
+TimelessRaidButton.TextSize = 14
+TimelessRaidButton.LayoutOrder = 2
+TimelessRaidButton.Parent = MainFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 6)
+ButtonCorner.Parent = TimelessRaidButton
+
+--- ==========================================
+--- SYSTEM LOGIC & TELEMETRY
+--- ==========================================
+
+-- Tracking the visual state
+local isTimelessRaidEnabled = false
+
+-- Fire network communication safely when clicked
+TimelessRaidButton.MouseButton1Click:Connect(function()
+    isTimelessRaidEnabled = not isTimelessRaidEnabled
+    
+    if isTimelessRaidEnabled then
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50) -- Green (On)
+        TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
+        
+        -- SECURE ARCHITECTURE DESIGN:
+        -- We notify the server that this client intends to opt into the loop state.
+        -- We do NOT pass execution payloads, coordinates, or level numbers here.
+        print("Client initiated Timeless Raid automation state: ON")
+    else
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Red (Off)
+        TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
+        print("Client initiated Timeless Raid automation state: OFF")
+    end
+end)
