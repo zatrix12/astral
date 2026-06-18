@@ -1,99 +1,191 @@
--- LocalScript - Place in StarterPlayerScripts or StarterGui
+-- LocalScript - Place in StarterGui or StarterPlayerScripts
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
 -- 1. Create the Main ScreenGui Container
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ModularityTestingGui"
+ScreenGui.Name = "ZatrixPanelGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
--- 2. Main Window Frame
+-- 2. Expanded Main Window Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainWindow"
-MainFrame.Size = UDim2.new(0, 250, 0, 300)
-MainFrame.Position = UDim2.new(0, 50, 0, 50)
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.Size = UDim2.new(0, 450, 0, 320)
+MainFrame.Position = UDim2.new(0, 100, 0, 100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Draggable = true -- Convenient for baseplate testing
+MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
--- Corner styling for the main window
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
 
--- Title Banner
+-- 3. Top Title Bar
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, -50, 0, 35) -- Room left for the X button
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "DEVELOPER TESTING PANEL"
+Title.Text = "ZATRIX IS AWESOME"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 16
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- UI List Layout to keep sections clean
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 10)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = MainFrame
+--- ==========================================
+--- NEW: CLOSE BUTTON (X) - FULLY UNLOADS
+--- ==========================================
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 75, 75)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 16
+CloseButton.Parent = MainFrame
 
--- Offset the list below the title banner
-Title.LayoutOrder = 0
-local Spacer = Instance.new("Frame")
-Spacer.Size = UDim2.new(1, 0, 0, 30)
-Spacer.BackgroundTransparency = 1
-Spacer.LayoutOrder = 1
-Spacer.Parent = MainFrame
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseButton
 
 --- ==========================================
---- SECTION: AUTO FARM & AUTO RAID WINDOWS
+--- NEW: SHOW / HIDE FLOATING TOGGLE BUTTON
 --- ==========================================
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "PanelDisplayToggle"
+ToggleButton.Size = UDim2.new(0, 80, 0, 30)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10) -- Sits out of the way in top-left screen
+ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ToggleButton.Text = "Hide Panel"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 13
+ToggleButton.ZIndex = 10 -- Makes sure it stays on top layer
+ToggleButton.Parent = ScreenGui
 
--- 3. "Timeless" Raid Activation Toggle Button
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.Parent = ToggleButton
+
+--- ==========================================
+--- LEFT-SIDE NAVIGATION MENU
+--- ==========================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 110, 1, -45)
+Sidebar.Position = UDim2.new(0, 10, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 6)
+SidebarCorner.Parent = Sidebar
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Padding = UDim.new(0, 6)
+SidebarList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarList.Parent = Sidebar
+
+local function createTabButton(name, layoutOrder)
+    local btn = Instance.new("TextButton")
+    btn.Name = name .. "Tab"
+    btn.Size = UDim2.new(0, 95, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.LayoutOrder = layoutOrder
+    btn.Parent = Sidebar
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = btn
+    return btn
+end
+
+local farmTab    = createTabButton("Farm", 1)
+local gambleTab  = createTabButton("Gamble", 2)
+local priorityTab = createTabButton("Priority", 3)
+local miscTab    = createTabButton("Misc", 4)
+
+--- ==========================================
+--- DYNAMIC CONTENT DISPLAY PAGES (RIGHT SIDE)
+--- ==========================================
+local ContentWindow = Instance.new("Frame")
+ContentWindow.Name = "ContentWindow"
+ContentWindow.Size = UDim2.new(1, -140, 1, -45)
+ContentWindow.Position = UDim2.new(0, 130, 0, 40)
+ContentWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ContentWindow.BorderSizePixel = 0
+ContentWindow.Parent = MainFrame
+
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 6)
+ContentCorner.Parent = ContentWindow
+
+local ContentList = Instance.new("UIListLayout")
+ContentList.Padding = UDim.new(0, 8)
+ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ContentList.SortOrder = Enum.SortOrder.LayoutOrder
+ContentList.Parent = ContentWindow
+
 local TimelessRaidButton = Instance.new("TextButton")
 TimelessRaidButton.Name = "TimelessRaidToggle"
-TimelessRaidButton.Size = UDim2.new(0, 200, 0, 45)
-TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Default Red (Off)
+TimelessRaidButton.Size = UDim2.new(0, 280, 0, 45)
+TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
 TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
 TimelessRaidButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 TimelessRaidButton.Font = Enum.Font.SourceSansBold
 TimelessRaidButton.TextSize = 14
-TimelessRaidButton.LayoutOrder = 2
-TimelessRaidButton.Parent = MainFrame
+TimelessRaidButton.Parent = ContentWindow
 
 local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 6)
 ButtonCorner.Parent = TimelessRaidButton
 
 --- ==========================================
---- SYSTEM LOGIC & TELEMETRY
+--- ELEMENT INTERACTION LOGIC
 --- ==========================================
 
--- Tracking the visual state
-local isTimelessRaidEnabled = false
-
--- Fire network communication safely when clicked
+-- 1. Timeless Loop Toggle logic
+local isTimelessActive = false
 TimelessRaidButton.MouseButton1Click:Connect(function()
-    isTimelessRaidEnabled = not isTimelessRaidEnabled
-    
-    if isTimelessRaidEnabled then
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50) -- Green (On)
+    isTimelessActive = not isTimelessActive
+    if isTimelessActive then
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(45, 140, 45)
         TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
-        
-        -- SECURE ARCHITECTURE DESIGN:
-        -- We notify the server that this client intends to opt into the loop state.
-        -- We do NOT pass execution payloads, coordinates, or level numbers here.
-        print("Client initiated Timeless Raid automation state: ON")
+        print("Timeless Raid Sequence Activated")
     else
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Red (Off)
+        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
         TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
-        print("Client initiated Timeless Raid automation state: OFF")
+        print("Timeless Raid Sequence Deactivated")
     end
+end)
+
+-- 2. New: Show/Hide Visibility Logic
+ToggleButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+    if MainFrame.Visible then
+        ToggleButton.Text = "Hide Panel"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    else
+        ToggleButton.Text = "Show Panel"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end
+end)
+
+-- 3. New: Destroy/Unload Logic
+CloseButton.MouseButton1Click:Connect(function()
+    print("Unloading Panel Layout entirely.")
+    ScreenGui:Destroy() -- Removes everything cleanly from memory
 end)
