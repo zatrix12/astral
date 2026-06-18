@@ -1,378 +1,386 @@
--- LocalScript - Place in StarterGui or StarterPlayerScripts
+-- LocalScript - Place inside StarterGui for the fastest execution path
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local localPlayer = Players.LocalPlayer
-local playerGui = localPlayer:WaitForChild("PlayerGui")
 
--- 1. Main Core Container
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZatrixPremiumHub"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = playerGui
-
--- 2. Sleek Modern Frame Geometry
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainWindow"
-MainFrame.Size = UDim2.new(0, 520, 0, 340)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-
--- FIXED: UIScale must be parented directly to the MainFrame to affect it
-local PanelScale = Instance.new("UIScale")
-PanelScale.Name = "PanelScale"
-PanelScale.Scale = 1.0 
-PanelScale.Parent = MainFrame
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 1
-MainStroke.Color = Color3.fromRGB(45, 45, 45)
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-MainStroke.Parent = MainFrame
-
--- 3. Header Segment
-local Header = Instance.new("Frame")
-Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundTransparency = 1
-Header.Parent = MainFrame
-
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.Position = UDim2.new(0, 16, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "ZATRIX IS AWESOME"
-Title.TextColor3 = Color3.fromRGB(240, 240, 240)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 15
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 24, 0, 24)
-CloseButton.Position = UDim2.new(1, -32, 0, 8)
-CloseButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-CloseButton.Text = "×"
-CloseButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-CloseButton.Font = Enum.Font.GothamMedium
-CloseButton.TextSize = 18
-CloseButton.Parent = Header
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseButton
-
---- ==========================================
---- SIDEBAR NAVIGATION PANEL (LEFT)
---- ==========================================
-local Sidebar = Instance.new("Frame")
-Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 125, 1, -55)
-Sidebar.Position = UDim2.new(0, 12, 0, 45)
-Sidebar.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-Sidebar.BorderSizePixel = 0
-Sidebar.Parent = MainFrame
-
-local SidebarCorner = Instance.new("UICorner")
-SidebarCorner.CornerRadius = UDim.new(0, 8)
-SidebarCorner.Parent = Sidebar
-
-local SidebarList = Instance.new("UIListLayout")
-SidebarList.Padding = UDim.new(0, 5)
-SidebarList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
-SidebarList.Parent = Sidebar
-
-local SidebarPadding = Instance.new("UIPadding")
-SidebarPadding.PaddingTop = UDim.new(0, 8)
-SidebarPadding.Parent = Sidebar
-
---- ==========================================
---- CONTENT DISPLAY CONTAINERS (RIGHT)
---- ==========================================
-local ContainerFrame = Instance.new("Frame")
-ContainerFrame.Name = "ContainerFrame"
-ContainerFrame.Size = UDim2.new(1, -160, 1, -55)
-ContainerFrame.Position = UDim2.new(0, 148, 0, 45)
-ContainerFrame.BackgroundTransparency = 1
-ContainerFrame.Parent = MainFrame
-
-local pages = {}
-local tabButtons = {}
-
-local function createPageAndTab(tabName, layoutOrder)
-    local page = Instance.new("ScrollingFrame")
-    page.Name = tabName .. "Page"
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-    page.Visible = false
-    page.Parent = ContainerFrame
-    
-    local pageList = Instance.new("UIListLayout")
-    pageList.Padding = UDim.new(0, 8)
-    pageList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    pageList.SortOrder = Enum.SortOrder.LayoutOrder
-    pageList.Parent = page
-    
-    pages[tabName] = page
-    
-    local btn = Instance.new("TextButton")
-    btn.Name = tabName .. "Tab"
-    btn.Size = UDim2.new(0, 110, 0, 34)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    btn.BackgroundTransparency = 1
-    btn.Text = "   " .. tabName
-    btn.TextColor3 = Color3.fromRGB(140, 140, 140)
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 13
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.LayoutOrder = layoutOrder
-    btn.Parent = Sidebar
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = btn
-    
-    tabButtons[tabName] = btn
-    return page, btn
+-- 1. FAST-BOOTSTRAP ENGINE: Immediate acquisition without thread stalls
+local playerGui = localPlayer:FindFirstChildOfClass("PlayerGui")
+if not playerGui then
+	playerGui = localPlayer:WaitForChild("PlayerGui", 5)
 end
 
-local farmPage, farmBtn         = createPageAndTab("Farm", 1)
-local gamblePage, gambleBtn     = createPageAndTab("Gamble", 2)
-local priorityPage, priorityBtn = createPageAndTab("Priority", 3)
-local miscPage, miscBtn         = createPageAndTab("Misc", 4)
-
---- ==========================================
---- POPULATING CONTENT SECTIONS
---- ==========================================
-
-local function addTestButton(parentPage, sectionName)
-    local testBtn = Instance.new("TextButton")
-    testBtn.Name = sectionName .. "TestButton"
-    testBtn.Size = UDim2.new(0, 330, 0, 38)
-    testBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
-    testBtn.Text = "Test (" .. sectionName .. ")"
-    testBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    testBtn.Font = Enum.Font.GothamMedium
-    testBtn.TextSize = 13
-    testBtn.LayoutOrder = 10
-    testBtn.Parent = parentPage
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = testBtn
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1
-    stroke.Color = Color3.fromRGB(48, 48, 48)
-    stroke.Parent = testBtn
+-- Fallback safety check if player spawned into a heavily lagged server
+if not playerGui then
+	task.wait()
+	playerGui = localPlayer:FindFirstChildOfClass("PlayerGui") or localPlayer:WaitForChild("PlayerGui")
 end
 
--- ==========================================
--- REDESIGNED CLEAN AUTO RAID TOGGLE BUTTON
--- ==========================================
-local TimelessRaidButton = Instance.new("TextButton")
-TimelessRaidButton.Name = "TimelessRaidToggle"
-TimelessRaidButton.Size = UDim2.new(0, 330, 0, 42)
-TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28) -- Clean subtle dark grey default
-TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
-TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
-TimelessRaidButton.Font = Enum.Font.GothamMedium
-TimelessRaidButton.TextSize = 13
-TimelessRaidButton.LayoutOrder = 1
-TimelessRaidButton.Parent = farmPage
+-- Wrap entire UI instantiation inside an isolated task thread so it compiles instantly
+task.spawn(function()
+	
+	-- Core ScreenGui Container
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "ZatrixPremiumHub"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = playerGui
 
-local RaidCorner = Instance.new("UICorner")
-RaidCorner.CornerRadius = UDim.new(0, 6)
-RaidCorner.Parent = TimelessRaidButton
+	-- Main Structural Window Frame
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Name = "MainWindow"
+	MainFrame.Size = UDim2.new(0, 520, 0, 340)
+	MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	MainFrame.BorderSizePixel = 0
+	MainFrame.Active = true
+	MainFrame.Draggable = true
+	MainFrame.Parent = ScreenGui
 
-local RaidStroke = Instance.new("UIStroke")
-RaidStroke.Thickness = 1
-RaidStroke.Color = Color3.fromRGB(45, 45, 45) -- Matching border theme
-RaidStroke.Parent = TimelessRaidButton
+	-- Dynamic Scaling Component (Parented immediately to avoid freeze anomalies)
+	local PanelScale = Instance.new("UIScale")
+	PanelScale.Name = "PanelScale"
+	PanelScale.Scale = 1.0 
+	PanelScale.Parent = MainFrame
 
-addTestButton(farmPage, "Farm")
-addTestButton(gamblePage, "Gamble")
-addTestButton(priorityPage, "Priority")
+	local MainCorner = Instance.new("UICorner")
+	MainCorner.CornerRadius = UDim.new(0, 10)
+	MainCorner.Parent = MainFrame
 
---- ==========================================
---- MISC SECTION SLIDER LOGIC (0.6 - 1.3)
---- ==========================================
-local SliderContainer = Instance.new("Frame")
-SliderContainer.Name = "SliderContainer"
-SliderContainer.Size = UDim2.new(0, 330, 0, 55)
-SliderContainer.BackgroundTransparency = 1
-SliderContainer.LayoutOrder = 1
-SliderContainer.Parent = miscPage
+	local MainStroke = Instance.new("UIStroke")
+	MainStroke.Thickness = 1
+	MainStroke.Color = Color3.fromRGB(45, 45, 45)
+	MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	MainStroke.Parent = MainFrame
 
-local SliderTitle = Instance.new("TextLabel")
-SliderTitle.Name = "SliderTitle"
-SliderTitle.Size = UDim2.new(1, 0, 0, 20)
-SliderTitle.BackgroundTransparency = 1
-SliderTitle.Text = "GUI Scale: 1.00x"
-SliderTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-SliderTitle.Font = Enum.Font.GothamMedium
-SliderTitle.TextSize = 12
-SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-SliderTitle.Parent = SliderContainer
+	-- Top Bar Header
+	local Header = Instance.new("Frame")
+	Header.Name = "Header"
+	Header.Size = UDim2.new(1, 0, 0, 40)
+	Header.BackgroundTransparency = 1
+	Header.Parent = MainFrame
 
-local SliderTrack = Instance.new("Frame")
-SliderTrack.Name = "SliderTrack"
-SliderTrack.Size = UDim2.new(1, 0, 0, 6)
-SliderTrack.Position = UDim2.new(0, 0, 0, 30)
-SliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-SliderTrack.BorderSizePixel = 0
-SliderTrack.Parent = SliderContainer
+	local Title = Instance.new("TextLabel")
+	Title.Name = "Title"
+	Title.Size = UDim2.new(1, -50, 1, 0)
+	Title.Position = UDim2.new(0, 16, 0, 0)
+	Title.BackgroundTransparency = 1
+	Title.Text = "ZATRIX IS AWESOME"
+	Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 15
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.Parent = Header
 
-local TrackCorner = Instance.new("UICorner")
-TrackCorner.CornerRadius = UDim.new(0, 3)
-TrackCorner.Parent = SliderTrack
+	local CloseButton = Instance.new("TextButton")
+	CloseButton.Name = "CloseButton"
+	CloseButton.Size = UDim2.new(0, 24, 0, 24)
+	CloseButton.Position = UDim2.new(1, -32, 0, 8)
+	CloseButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+	CloseButton.Text = "×"
+	CloseButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+	CloseButton.Font = Enum.Font.GothamMedium
+	CloseButton.TextSize = 18
+	CloseButton.Parent = Header
 
-local SliderFill = Instance.new("Frame")
-SliderFill.Name = "SliderFill"
-SliderFill.Size = UDim2.new(0.571, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 230) -- Clean slider blue
-SliderFill.BorderSizePixel = 0
-SliderFill.Parent = SliderTrack
+	local CloseCorner = Instance.new("UICorner")
+	CloseCorner.CornerRadius = UDim.new(0, 6)
+	CloseCorner.Parent = CloseButton
 
-local FillCorner = Instance.new("UICorner")
-FillCorner.CornerRadius = UDim.new(0, 3)
-FillCorner.Parent = SliderFill
+	-- Left Sidebar Layout Channel
+	local Sidebar = Instance.new("Frame")
+	Sidebar.Name = "Sidebar"
+	Sidebar.Size = UDim2.new(0, 125, 1, -55)
+	Sidebar.Position = UDim2.new(0, 12, 0, 45)
+	Sidebar.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+	Sidebar.BorderSizePixel = 0
+	Sidebar.Parent = MainFrame
 
-local SliderButton = Instance.new("TextButton")
-SliderButton.Name = "SliderButton"
-SliderButton.Size = UDim2.new(0, 14, 0, 14)
-SliderButton.Position = UDim2.new(0.571, -7, 0.5, -7)
-SliderButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-SliderButton.Text = ""
-SliderButton.Parent = SliderTrack
+	local SidebarCorner = Instance.new("UICorner")
+	SidebarCorner.CornerRadius = UDim.new(0, 8)
+	SidebarCorner.Parent = Sidebar
 
-local KnobCorner = Instance.new("UICorner")
-KnobCorner.CornerRadius = UDim.new(1, 0)
-KnobCorner.Parent = SliderButton
+	local SidebarList = Instance.new("UIListLayout")
+	SidebarList.Padding = UDim.new(0, 5)
+	SidebarList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+	SidebarList.Parent = Sidebar
 
-local minScale = 0.6
-local maxScale = 1.3
-local isDragging = false
+	local SidebarPadding = Instance.new("UIPadding")
+	SidebarPadding.PaddingTop = UDim.new(0, 8)
+	SidebarPadding.Parent = Sidebar
 
-local function updateSlider(inputObject)
-    local trackWidth = SliderTrack.AbsoluteSize.X
-    if trackWidth == 0 then return end
-    
-    local mouseX = inputObject.Position.X - SliderTrack.AbsolutePosition.X
-    local percentage = math.clamp(mouseX / trackWidth, 0, 1)
-    local calculatedScale = minScale + (percentage * (maxScale - minScale))
-    
-    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-    SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
-    SliderTitle.Text = string.format("GUI Scale: %.2fx", calculatedScale)
-    
-    -- Update the core layout scale frame value directly
-    PanelScale.Scale = calculatedScale
-end
+	-- Right Content View Window
+	local ContainerFrame = Instance.new("Frame")
+	ContainerFrame.Name = "ContainerFrame"
+	ContainerFrame.Size = UDim2.new(1, -160, 1, -55)
+	ContainerFrame.Position = UDim2.new(0, 148, 0, 45)
+	ContainerFrame.BackgroundTransparency = 1
+	ContainerFrame.Parent = MainFrame
 
-SliderButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDragging = true
-    end
-end)
+	local pages = {}
+	local tabButtons = {}
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDragging = false
-    end
-end)
+	-- Modular Tab Generator Function
+	local function createPageAndTab(tabName, layoutOrder)
+		local page = Instance.new("ScrollingFrame")
+		page.Name = tabName .. "Page"
+		page.Size = UDim2.new(1, 0, 1, 0)
+		page.BackgroundTransparency = 1
+		page.CanvasSize = UDim2.new(0, 0, 0, 0)
+		page.ScrollBarThickness = 3
+		page.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+		page.Visible = false
+		page.Parent = ContainerFrame
+		
+		local pageList = Instance.new("UIListLayout")
+		pageList.Padding = UDim.new(0, 8)
+		pageList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		pageList.SortOrder = Enum.SortOrder.LayoutOrder
+		pageList.Parent = page
+		
+		pages[tabName] = page
+		
+		local btn = Instance.new("TextButton")
+		btn.Name = tabName .. "Tab"
+		btn.Size = UDim2.new(0, 110, 0, 34)
+		btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+		btn.BackgroundTransparency = 1
+		btn.Text = "   " .. tabName
+		btn.TextColor3 = Color3.fromRGB(140, 140, 140)
+		btn.Font = Enum.Font.GothamMedium
+		btn.TextSize = 13
+		btn.TextXAlignment = Enum.TextXAlignment.Left
+		btn.LayoutOrder = layoutOrder
+		btn.Parent = Sidebar
+		
+		local btnCorner = Instance.new("UICorner")
+		btnCorner.CornerRadius = UDim.new(0, 6)
+		btnCorner.Parent = btn
+		
+		tabButtons[tabName] = btn
+		return page, btn
+	end
 
-UserInputService.InputChanged:Connect(function(input)
-    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        updateSlider(input)
-    end
-end)
+	-- Instantiate Tab Registry Arrays
+	local farmPage, farmBtn         = createPageAndTab("Farm", 1)
+	local gamblePage, gambleBtn     = createPageAndTab("Gamble", 2)
+	local priorityPage, priorityBtn = createPageAndTab("Priority", 3)
+	local miscPage, miscBtn         = createPageAndTab("Misc", 4)
 
---- ==========================================
---- HUB NAVIGATION & UI MANAGEMENT CORE
---- ==========================================
-local function switchTab(tabName)
-    for name, button in pairs(tabButtons) do
-        button.BackgroundTransparency = 1
-        button.TextColor3 = Color3.fromRGB(140, 140, 140)
-        pages[name].Visible = false
-    end
-    
-    local targetBtn = tabButtons[tabName]
-    if targetBtn then
-        targetBtn.BackgroundTransparency = 0
-        targetBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
-        targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        pages[tabName].Visible = true
-    end
-end
+	-- Fast Global Factory Constructor for placeholder features
+	local function addTestButton(parentPage, sectionName)
+		local testBtn = Instance.new("TextButton")
+		testBtn.Name = sectionName .. "TestButton"
+		testBtn.Size = UDim2.new(0, 330, 0, 38)
+		testBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+		testBtn.Text = "Test (" .. sectionName .. ")"
+		testBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+		testBtn.Font = Enum.Font.GothamMedium
+		testBtn.TextSize = 13
+		testBtn.LayoutOrder = 10
+		testBtn.Parent = parentPage
+		
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 6)
+		corner.Parent = testBtn
+		
+		local stroke = Instance.new("UIStroke")
+		stroke.Thickness = 1
+		stroke.Color = Color3.fromRGB(48, 48, 48)
+		stroke.Parent = testBtn
+	end
 
-for name, button in pairs(tabButtons) do
-    button.MouseButton1Click:Connect(function()
-        switchTab(name)
-    end)
-end
+	-- Populating Content Sections
+	local TimelessRaidButton = Instance.new("TextButton")
+	TimelessRaidButton.Name = "TimelessRaidToggle"
+	TimelessRaidButton.Size = UDim2.new(0, 330, 0, 42)
+	TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+	TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
+	TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+	TimelessRaidButton.Font = Enum.Font.GothamMedium
+	TimelessRaidButton.TextSize = 13
+	TimelessRaidButton.LayoutOrder = 1
+	TimelessRaidButton.Parent = farmPage
 
-switchTab("Farm")
+	local RaidCorner = Instance.new("UICorner")
+	RaidCorner.CornerRadius = UDim.new(0, 6)
+	RaidCorner.Parent = TimelessRaidButton
 
--- Modern Blue Accent Toggle Logic
-local isTimelessActive = false
-TimelessRaidButton.MouseButton1Click:Connect(function()
-    isTimelessActive = not isTimelessActive
-    if isTimelessActive then
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(24, 32, 45) -- Dark Blue theme
-        TimelessRaidButton.TextColor3 = Color3.fromRGB(100, 180, 255)  -- Neon cyan text
-        RaidStroke.Color = Color3.fromRGB(50, 90, 160)
-        TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
-    else
-        TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-        TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
-        RaidStroke.Color = Color3.fromRGB(45, 45, 45)
-        TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
-    end
-end)
+	local RaidStroke = Instance.new("UIStroke")
+	RaidStroke.Thickness = 1
+	RaidStroke.Color = Color3.fromRGB(45, 45, 45)
+	RaidStroke.Parent = TimelessRaidButton
 
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+	addTestButton(farmPage, "Farm")
+	addTestButton(gamblePage, "Gamble")
+	addTestButton(priorityPage, "Priority")
 
---- ==========================================
---- FLOATING SHOW/HIDE TOGGLE HUD
---- ==========================================
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "HUDDisplayToggle"
-ToggleButton.Size = UDim2.new(0, 90, 0, 32)
-ToggleButton.Position = UDim2.new(0, 15, 0, 15)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-ToggleButton.Text = "Toggle UI"
-ToggleButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-ToggleButton.Font = Enum.Font.GothamMedium
-ToggleButton.TextSize = 12
-ToggleButton.ZIndex = 10
-ToggleButton.Parent = ScreenGui
+	--- ==========================================
+	--- MISC SECTION SLIDER CONFIGURATION
+	--- ==========================================
+	local SliderContainer = Instance.new("Frame")
+	SliderContainer.Name = "SliderContainer"
+	SliderContainer.Size = UDim2.new(0, 330, 0, 55)
+	SliderContainer.BackgroundTransparency = 1
+	SliderContainer.LayoutOrder = 1
+	SliderContainer.Parent = miscPage
 
-local UIStrokeToggle = Instance.new("UIStroke")
-UIStrokeToggle.Thickness = 1
-UIStrokeToggle.Color = Color3.fromRGB(45, 45, 45)
-UIStrokeToggle.Parent = ToggleButton
+	local SliderTitle = Instance.new("TextLabel")
+	SliderTitle.Name = "SliderTitle"
+	SliderTitle.Size = UDim2.new(1, 0, 0, 20)
+	SliderTitle.BackgroundTransparency = 1
+	SliderTitle.Text = "GUI Scale: 1.00x"
+	SliderTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+	SliderTitle.Font = Enum.Font.GothamMedium
+	SliderTitle.TextSize = 12
+	SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+	SliderTitle.Parent = SliderContainer
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 6)
-ToggleCorner.Parent = ToggleButton
+	local SliderTrack = Instance.new("Frame")
+	SliderTrack.Name = "SliderTrack"
+	SliderTrack.Size = UDim2.new(1, 0, 0, 6)
+	SliderTrack.Position = UDim2.new(0, 0, 0, 30)
+	SliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	SliderTrack.BorderSizePixel = 0
+	SliderTrack.Parent = SliderContainer
 
-ToggleButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
+	local TrackCorner = Instance.new("UICorner")
+	TrackCorner.CornerRadius = UDim.new(0, 3)
+	TrackCorner.Parent = SliderTrack
+
+	local SliderFill = Instance.new("Frame")
+	SliderFill.Name = "SliderFill"
+	SliderFill.Size = UDim2.new(0.571, 0, 1, 0)
+	SliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 230)
+	SliderFill.BorderSizePixel = 0
+	SliderFill.Parent = SliderTrack
+
+	local FillCorner = Instance.new("UICorner")
+	FillCorner.CornerRadius = UDim.new(0, 3)
+	FillCorner.Parent = SliderFill
+
+	local SliderButton = Instance.new("TextButton")
+	SliderButton.Name = "SliderButton"
+	SliderButton.Size = UDim2.new(0, 14, 0, 14)
+	SliderButton.Position = UDim2.new(0.571, -7, 0.5, -7)
+	SliderButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+	SliderButton.Text = ""
+	SliderButton.Parent = SliderTrack
+
+	local KnobCorner = Instance.new("UICorner")
+	KnobCorner.CornerRadius = UDim.new(1, 0)
+	KnobCorner.Parent = SliderButton
+
+	local minScale = 0.6
+	local maxScale = 1.3
+	local isDragging = false
+
+	local function updateSlider(inputObject)
+		local trackWidth = SliderTrack.AbsoluteSize.X
+		if trackWidth == 0 then trackWidth = 330 end
+		
+		local mouseX = inputObject.Position.X - SliderTrack.AbsolutePosition.X
+		local percentage = math.clamp(mouseX / trackWidth, 0, 1)
+		local calculatedScale = minScale + (percentage * (maxScale - minScale))
+		
+		SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+		SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
+		SliderTitle.Text = string.format("GUI Scale: %.2fx", calculatedScale)
+		
+		PanelScale.Scale = calculatedScale
+	end
+
+	SliderButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = true
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			updateSlider(input)
+		end
+	end)
+
+	--- ==========================================
+	--- NAVIGATION & ROUTING HANDLERS
+	--- ==========================================
+	local function switchTab(tabName)
+		for name, button in pairs(tabButtons) do
+			button.BackgroundTransparency = 1
+			button.TextColor3 = Color3.fromRGB(140, 140, 140)
+			pages[name].Visible = false
+		end
+		
+		local targetBtn = tabButtons[tabName]
+		if targetBtn then
+			targetBtn.BackgroundTransparency = 0
+			targetBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+			targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			pages[tabName].Visible = true
+		end
+	end
+
+	for name, button in pairs(tabButtons) do
+		button.MouseButton1Click:Connect(function()
+			switchTab(name)
+		end)
+	end
+
+	switchTab("Farm")
+
+	-- Clean Minimalist Toggle Mechanics
+	local isTimelessActive = false
+	TimelessRaidButton.MouseButton1Click:Connect(function()
+		isTimelessActive = not isTimelessActive
+		if isTimelessActive then
+			TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(24, 32, 45)
+			TimelessRaidButton.TextColor3 = Color3.fromRGB(100, 180, 255)
+			RaidStroke.Color = Color3.fromRGB(50, 90, 160)
+			TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
+		else
+			TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+			TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+			RaidStroke.Color = Color3.fromRGB(45, 45, 45)
+			TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
+		end
+	end)
+
+	CloseButton.MouseButton1Click:Connect(function()
+		ScreenGui:Destroy()
+	end)
+
+	--- ==========================================
+	--- GLOBAL HUD INTERACTION SYSTEM
+	--- ==========================================
+	local ToggleButton = Instance.new("TextButton")
+	ToggleButton.Name = "HUDDisplayToggle"
+	ToggleButton.Size = UDim2.new(0, 90, 0, 32)
+	ToggleButton.Position = UDim2.new(0, 15, 0, 15)
+	ToggleButton.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	ToggleButton.Text = "Toggle UI"
+	ToggleButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+	ToggleButton.Font = Enum.Font.GothamMedium
+	ToggleButton.TextSize = 12
+	ToggleButton.ZIndex = 10
+	ToggleButton.Parent = ScreenGui
+
+	local UIStrokeToggle = Instance.new("UIStroke")
+	UIStrokeToggle.Thickness = 1
+	UIStrokeToggle.Color = Color3.fromRGB(45, 45, 45)
+	UIStrokeToggle.Parent = ToggleButton
+
+	local ToggleCorner = Instance.new("UICorner")
+	ToggleCorner.CornerRadius = UDim.new(0, 6)
+	ToggleCorner.Parent = ToggleButton
+
+	ToggleButton.MouseButton1Click:Connect(function()
+		MainFrame.Visible = not MainFrame.Visible
+	end)
+
 end)
