@@ -1,6 +1,6 @@
 -- LocalScript - Place in StarterGui or StarterPlayerScripts
 local Players = game:GetService("Players")
-local TweetService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
@@ -10,22 +10,30 @@ ScreenGui.Name = "ZatrixPremiumHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
+-- ==========================================
+-- NEW: UI SCALE OBJECT (Handles the sizing)
+-- ==========================================
+local PanelScale = Instance.new("UIScale")
+PanelScale.Scale = 1.0 -- Default scale
+PanelScale.Parent = nil -- Will be parented to MainFrame once created
+
 -- 2. Sleek Modern Frame Geometry
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainWindow"
-MainFrame.Size = UDim2.new(0, 520, 0, 340) -- Adjusted dimensions for visual balance
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170) -- Center of screen
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18) -- Deep Charcoal Dark Mode
+MainFrame.Size = UDim2.new(0, 520, 0, 340)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
+PanelScale.Parent = MainFrame -- Hook up scale to the window
+
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Subtle border stroke for premium aesthetic
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 1
 MainStroke.Color = Color3.fromRGB(45, 45, 45)
@@ -101,12 +109,10 @@ ContainerFrame.Position = UDim2.new(0, 148, 0, 45)
 ContainerFrame.BackgroundTransparency = 1
 ContainerFrame.Parent = MainFrame
 
--- Store pages and tab references
 local pages = {}
 local tabButtons = {}
 
 local function createPageAndTab(tabName, layoutOrder)
-    -- Create Page Container
     local page = Instance.new("ScrollingFrame")
     page.Name = tabName .. "Page"
     page.Size = UDim2.new(1, 0, 1, 0)
@@ -125,11 +131,10 @@ local function createPageAndTab(tabName, layoutOrder)
     
     pages[tabName] = page
     
-    -- Create Sidebar Tab Button
     local btn = Instance.new("TextButton")
     btn.Name = tabName .. "Tab"
     btn.Size = UDim2.new(0, 110, 0, 34)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24) -- Transparent blend by default
+    btn.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
     btn.BackgroundTransparency = 1
     btn.Text = "   " .. tabName
     btn.TextColor3 = Color3.fromRGB(140, 140, 140)
@@ -147,17 +152,15 @@ local function createPageAndTab(tabName, layoutOrder)
     return page, btn
 end
 
--- Generate the 4 specialized tabs
 local farmPage, farmBtn         = createPageAndTab("Farm", 1)
 local gamblePage, gambleBtn     = createPageAndTab("Gamble", 2)
 local priorityPage, priorityBtn = createPageAndTab("Priority", 3)
 local miscPage, miscBtn         = createPageAndTab("Misc", 4)
 
 --- ==========================================
---- POPULATING CONTENT SECTIONS WITH BUTTONS
+--- POPULATING CONTENT SECTIONS
 --- ==========================================
 
--- Shared function to instantly add generic testing components inside pages
 local function addTestButton(parentPage, sectionName)
     local testBtn = Instance.new("TextButton")
     testBtn.Name = sectionName .. "TestButton"
@@ -184,7 +187,7 @@ local function addTestButton(parentPage, sectionName)
     end)
 end
 
--- 1. Farm Layout Population (Contains Timeless Raid + its own Test Button)
+-- Farm Page Elements
 local TimelessRaidButton = Instance.new("TextButton")
 TimelessRaidButton.Name = "TimelessRaidToggle"
 TimelessRaidButton.Size = UDim2.new(0, 330, 0, 42)
@@ -208,7 +211,101 @@ RaidStroke.Parent = TimelessRaidButton
 addTestButton(farmPage, "Farm")
 addTestButton(gamblePage, "Gamble")
 addTestButton(priorityPage, "Priority")
-addTestButton(miscPage, "Misc")
+
+--- ==========================================
+--- NEW: MISC SECTION SLIDER LOGIC (0.6 - 1.3)
+--- ==========================================
+
+local SliderContainer = Instance.new("Frame")
+SliderContainer.Name = "SliderContainer"
+SliderContainer.Size = UDim2.new(0, 330, 0, 55)
+SliderContainer.BackgroundTransparency = 1
+SliderContainer.LayoutOrder = 1
+SliderContainer.Parent = miscPage
+
+local SliderTitle = Instance.new("TextLabel")
+SliderTitle.Name = "SliderTitle"
+SliderTitle.Size = UDim2.new(1, 0, 0, 20)
+SliderTitle.BackgroundTransparency = 1
+SliderTitle.Text = "GUI Scale: 1.00x"
+SliderTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+SliderTitle.Font = Enum.Font.GothamMedium
+SliderTitle.TextSize = 12
+SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+SliderTitle.Parent = SliderContainer
+
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Name = "SliderTrack"
+SliderTrack.Size = UDim2.new(1, 0, 0, 6)
+SliderTrack.Position = UDim2.new(0, 0, 0, 30)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SliderTrack.BorderSizePixel = 0
+SliderTrack.Parent = SliderContainer
+
+local TrackCorner = Instance.new("UICorner")
+TrackCorner.CornerRadius = UDim.new(0, 3)
+TrackCorner.Parent = SliderTrack
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Name = "SliderFill"
+SliderFill.Size = UDim2.new(0.571, 0, 1, 0) -- Corresponds to 1.0 initial scale setup
+SliderFill.BackgroundColor3 = Color3.fromRGB(100, 100, 240)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderTrack
+
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(0, 3)
+FillCorner.Parent = SliderFill
+
+local SliderButton = Instance.new("TextButton")
+SliderButton.Name = "SliderButton"
+SliderButton.Size = UDim2.new(0, 14, 0, 14)
+SliderButton.Position = UDim2.new(0.571, -7, 0.5, -7)
+SliderButton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+SliderButton.Text = ""
+SliderButton.Parent = SliderTrack
+
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = SliderButton
+
+-- Math parameters for slider constraints
+local minScale = 0.6
+local maxScale = 1.3
+local isDragging = false
+
+local function updateSlider(inputObject)
+    local trackWidth = SliderTrack.AbsoluteSize.X
+    local mouseX = inputObject.Position.X - SliderTrack.AbsolutePosition.X
+    local percentage = math.clamp(mouseX / trackWidth, 0, 1)
+    
+    -- Calculate scaled number value smoothly across linear floor gaps
+    local calculatedScale = minScale + (percentage * (maxScale - minScale))
+    
+    -- Apply changes
+    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+    SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
+    SliderTitle.Text = string.format("GUI Scale: %.2fx", calculatedScale)
+    PanelScale.Scale = calculatedScale
+end
+
+SliderButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSlider(input)
+    end
+end)
 
 --- ==========================================
 --- HUB NAVIGATION & UI MANAGEMENT CORE
@@ -217,14 +314,12 @@ addTestButton(miscPage, "Misc")
 local currentActiveTab = nil
 
 local function switchTab(tabName)
-    -- Reset all tabs visually
     for name, button in pairs(tabButtons) do
         button.BackgroundTransparency = 1
         button.TextColor3 = Color3.fromRGB(140, 140, 140)
         pages[name].Visible = false
     end
     
-    -- Focus Selected Tab
     local targetBtn = tabButtons[tabName]
     if targetBtn then
         targetBtn.BackgroundTransparency = 0
@@ -235,17 +330,14 @@ local function switchTab(tabName)
     end
 end
 
--- Bind internal click handlers to tab array
 for name, button in pairs(tabButtons) do
     button.MouseButton1Click:Connect(function()
         switchTab(name)
     end)
 end
 
--- Open the default menu channel
 switchTab("Farm")
 
--- Timeless Toggle Interface Hook
 local isTimelessActive = false
 TimelessRaidButton.MouseButton1Click:Connect(function()
     isTimelessActive = not isTimelessActive
@@ -262,7 +354,6 @@ TimelessRaidButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Destructor Unload Signal
 CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
