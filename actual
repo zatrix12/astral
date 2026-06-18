@@ -1,30 +1,21 @@
--- LocalScript - Place inside StarterGui for the fastest execution path
+-- LocalScript - Place inside StarterGui
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local localPlayer = Players.LocalPlayer
 
--- 1. FAST-BOOTSTRAP ENGINE: Immediate acquisition without thread stalls
-local playerGui = localPlayer:FindFirstChildOfClass("PlayerGui")
-if not playerGui then
-	playerGui = localPlayer:WaitForChild("PlayerGui", 5)
-end
+local playerGui = localPlayer:FindFirstChildOfClass("PlayerGui") or localPlayer:WaitForChild("PlayerGui", 5)
 
--- Fallback safety check if player spawned into a heavily lagged server
-if not playerGui then
-	task.wait()
-	playerGui = localPlayer:FindFirstChildOfClass("PlayerGui") or localPlayer:WaitForChild("PlayerGui")
-end
-
--- Wrap entire UI instantiation inside an isolated task thread so it compiles instantly
 task.spawn(function()
-	
+	if not playerGui then return end
+
 	-- Core ScreenGui Container
 	local ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "ZatrixPremiumHub"
 	ScreenGui.ResetOnSpawn = false
 	ScreenGui.Parent = playerGui
 
-	-- Main Structural Window Frame
+	-- Main Window Frame
 	local MainFrame = Instance.new("Frame")
 	MainFrame.Name = "MainWindow"
 	MainFrame.Size = UDim2.new(0, 520, 0, 340)
@@ -35,7 +26,6 @@ task.spawn(function()
 	MainFrame.Draggable = true
 	MainFrame.Parent = ScreenGui
 
-	-- Dynamic Scaling Component (Parented immediately to avoid freeze anomalies)
 	local PanelScale = Instance.new("UIScale")
 	PanelScale.Name = "PanelScale"
 	PanelScale.Scale = 1.0 
@@ -85,7 +75,7 @@ task.spawn(function()
 	CloseCorner.CornerRadius = UDim.new(0, 6)
 	CloseCorner.Parent = CloseButton
 
-	-- Left Sidebar Layout Channel
+	-- Left Sidebar Layout
 	local Sidebar = Instance.new("Frame")
 	Sidebar.Name = "Sidebar"
 	Sidebar.Size = UDim2.new(0, 125, 1, -55)
@@ -119,7 +109,6 @@ task.spawn(function()
 	local pages = {}
 	local tabButtons = {}
 
-	-- Modular Tab Generator Function
 	local function createPageAndTab(tabName, layoutOrder)
 		local page = Instance.new("ScrollingFrame")
 		page.Name = tabName .. "Page"
@@ -160,13 +149,11 @@ task.spawn(function()
 		return page, btn
 	end
 
-	-- Instantiate Tab Registry Arrays
 	local farmPage, farmBtn         = createPageAndTab("Farm", 1)
 	local gamblePage, gambleBtn     = createPageAndTab("Gamble", 2)
 	local priorityPage, priorityBtn = createPageAndTab("Priority", 3)
 	local miscPage, miscBtn         = createPageAndTab("Misc", 4)
 
-	-- Fast Global Factory Constructor for placeholder features
 	local function addTestButton(parentPage, sectionName)
 		local testBtn = Instance.new("TextButton")
 		testBtn.Name = sectionName .. "TestButton"
@@ -189,7 +176,7 @@ task.spawn(function()
 		stroke.Parent = testBtn
 	end
 
-	-- Populating Content Sections
+	-- Timeless Button Initialization
 	local TimelessRaidButton = Instance.new("TextButton")
 	TimelessRaidButton.Name = "TimelessRaidToggle"
 	TimelessRaidButton.Size = UDim2.new(0, 330, 0, 42)
@@ -308,7 +295,61 @@ task.spawn(function()
 	end)
 
 	--- ==========================================
-	--- NAVIGATION & ROUTING HANDLERS
+	--- LIVE NETWORKING LOGIC & WAVE MONITOR
+	--- ==========================================
+	local isTimelessActive = false
+	local timelessLoopThread = nil
+
+	-- TARGET NETWORKS: Change these to match your internal Remotes
+	local RaidRemote = ReplicatedStorage:FindFirstChild("JoinRaidRemote") or Instance.new("RemoteEvent", ReplicatedStorage)
+	RaidRemote.Name = "JoinRaidRemote"
+
+	-- TARGET SCREEN PATH: Point this exactly to your game's Wave display TextLabel
+	local function getGameWave()
+		-- We look for the MaxNinjaRaidWave path you found earlier!
+		local targetLabel = playerGui:FindFirstChild("Windows") and playerGui.Windows:FindFirstChild("PlayerStats")
+		
+		if targetLabel then
+			-- Extract text numbers safely
+			local textString = targetLabel.Main.Stats.Player.MaxNinjaRaidWave.Text
+			local numericWave = tonumber(textString:match("%d+"))
+			return numericWave or 1
+		end
+		return 1 -- Fallback default
+	end
+
+	local function startTimelessLoop()
+		if timelessLoopThread then task.cancel(timelessLoopThread) end
+		
+		timelessLoopThread = task.spawn(function()
+			print("[AUTO TIMELESS] Monitoring local UI text values...")
+			
+			while isTimelessActive do
+				local currentWave = getGameWave()
+				
+				if currentWave >= 35 then
+					print("[AUTO TIMELESS] Detected target wave 35! Dispatching re-entry request.")
+					
+					-- Fires the trigger to place you back in the arena loop inside this server
+					RaidRemote:FireServer("StartTimeless")
+					
+					task.wait(6) -- Cooldown to let the level reset
+				end
+				task.wait(1)
+			end
+		end)
+	end
+
+	local function stopTimelessLoop()
+		if timelessLoopThread then
+			task.cancel(timelessLoopThread)
+			timelessLoopThread = nil
+			print("[AUTO TIMELESS] Monitor Offline.")
+		end
+	end
+
+	--- ==========================================
+	--- NAVIGATION & INTERFACE SWITCHES
 	--- ==========================================
 	local function switchTab(tabName)
 		for name, button in pairs(tabButtons) do
@@ -334,8 +375,6 @@ task.spawn(function()
 
 	switchTab("Farm")
 
-	-- Clean Minimalist Toggle Mechanics
-	local isTimelessActive = false
 	TimelessRaidButton.MouseButton1Click:Connect(function()
 		isTimelessActive = not isTimelessActive
 		if isTimelessActive then
@@ -343,21 +382,21 @@ task.spawn(function()
 			TimelessRaidButton.TextColor3 = Color3.fromRGB(100, 180, 255)
 			RaidStroke.Color = Color3.fromRGB(50, 90, 160)
 			TimelessRaidButton.Text = "Auto Raid: Timeless (ON)"
+			startTimelessLoop()
 		else
 			TimelessRaidButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
 			TimelessRaidButton.TextColor3 = Color3.fromRGB(160, 160, 160)
 			RaidStroke.Color = Color3.fromRGB(45, 45, 45)
 			TimelessRaidButton.Text = "Auto Raid: Timeless (OFF)"
+			stopTimelessLoop()
 		end
 	end)
 
 	CloseButton.MouseButton1Click:Connect(function()
+		stopTimelessLoop()
 		ScreenGui:Destroy()
 	end)
 
-	--- ==========================================
-	--- GLOBAL HUD INTERACTION SYSTEM
-	--- ==========================================
 	local ToggleButton = Instance.new("TextButton")
 	ToggleButton.Name = "HUDDisplayToggle"
 	ToggleButton.Size = UDim2.new(0, 90, 0, 32)
@@ -382,5 +421,4 @@ task.spawn(function()
 	ToggleButton.MouseButton1Click:Connect(function()
 		MainFrame.Visible = not MainFrame.Visible
 	end)
-
 end)
