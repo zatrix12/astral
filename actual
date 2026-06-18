@@ -295,47 +295,73 @@ task.spawn(function()
 	end)
 
 	--- ==========================================
-	--- LIVE NETWORKING LOGIC & WAVE MONITOR
+	--- SCANNING SEARCH LOOP & ENTRY MECHANICS
 	--- ==========================================
 	local isTimelessActive = false
 	local timelessLoopThread = nil
 
-	-- TARGET NETWORKS: Change these to match your internal Remotes
-	local RaidRemote = ReplicatedStorage:FindFirstChild("JoinRaidRemote") or Instance.new("RemoteEvent", ReplicatedStorage)
-	RaidRemote.Name = "JoinRaidRemote"
-
-	-- TARGET SCREEN PATH: Point this exactly to your game's Wave display TextLabel
-	local function getGameWave()
-		-- We look for the MaxNinjaRaidWave path you found earlier!
-		local targetLabel = playerGui:FindFirstChild("Windows") and playerGui.Windows:FindFirstChild("PlayerStats")
-		
-		if targetLabel then
-			-- Extract text numbers safely
-			local textString = targetLabel.Main.Stats.Player.MaxNinjaRaidWave.Text
-			local numericWave = tonumber(textString:match("%d+"))
-			return numericWave or 1
+	-- Smart-Scan: Searches ReplicatedStorage for any RemoteEvent that starts a raid
+	local function findRaidRemote()
+		for _, item in ipairs(ReplicatedStorage:GetDescendants()) do
+			if item:IsA("RemoteEvent") then
+				local name = item.Name:lower()
+				if name:find("raid") or name:find("join") or name:find("start") or name:find("timeless") then
+					return item
+				end
+			end
 		end
-		return 1 -- Fallback default
+		return nil
+	end
+
+	-- Smart-Scan: Looks for the IntValue tracking the active round wave
+	local function findWaveValue()
+		-- Checks player workspace variables or leaderboard states
+		for _, item in ipairs(localPlayer:GetDescendants()) do
+			if item:IsA("IntValue") and (item.Name:lower():find("wave") or item.Name:lower():find("round")) then
+				return item
+			end
+		end
+		for _, item in ipairs(workspace:GetDescendants()) do
+			if item:IsA("IntValue") and (item.Name:lower():find("wave") or item.Name:lower():find("round")) then
+				return item
+			end
+		end
+		return nil
 	end
 
 	local function startTimelessLoop()
 		if timelessLoopThread then task.cancel(timelessLoopThread) end
 		
 		timelessLoopThread = task.spawn(function()
-			print("[AUTO TIMELESS] Monitoring local UI text values...")
+			print("[AUTO TIMELESS] Scan system online.")
 			
 			while isTimelessActive do
-				local currentWave = getGameWave()
+				local waveObj = findWaveValue()
+				local currentWave = waveObj and waveObj.Value or 1
 				
-				if currentWave >= 35 then
-					print("[AUTO TIMELESS] Detected target wave 35! Dispatching re-entry request.")
-					
-					-- Fires the trigger to place you back in the arena loop inside this server
-					RaidRemote:FireServer("StartTimeless")
-					
-					task.wait(6) -- Cooldown to let the level reset
+				-- Debug logging to track real-time discovery in console
+				if waveObj then
+					print("[AUTO TIMELESS] Found active wave tracker variable: " .. waveObj:GetFullName() .. " [Value: " .. currentWave .. "]")
 				end
-				task.wait(1)
+
+				if currentWave >= 35 then
+					print("[AUTO TIMELESS] Wave 35 cap achieved! Finding re-entry remote...")
+					
+					local targetRemote = findRaidRemote()
+					if targetRemote then
+						print("[AUTO TIMELESS] Dispatched action token to remote: " .. targetRemote:GetFullName())
+						
+						-- Fire the remote with the arguments used by typical raid endpoints
+						targetRemote:FireServer("StartTimeless")
+						targetRemote:FireServer("Timeless")
+						targetRemote:FireServer()
+					else
+						warn("[AUTO TIMELESS] Could not locate a matching raid network channel.")
+					end
+					
+					task.wait(8) -- Safe lock period while game reloads your position
+				end
+				task.wait(1.5)
 			end
 		end)
 	end
@@ -344,7 +370,7 @@ task.spawn(function()
 		if timelessLoopThread then
 			task.cancel(timelessLoopThread)
 			timelessLoopThread = nil
-			print("[AUTO TIMELESS] Monitor Offline.")
+			print("[AUTO TIMELESS] System Offline.")
 		end
 	end
 
